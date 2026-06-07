@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SALIN-LAHI Rover</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#1A1A2E; --navy2:#16213E; --gold:#C8973A; --gold-light:#E8C97A;
+  --white:#FFFFFF; --green:#2D6A4F; --green2:#40916C; --red:#8B2635;
+  --muted:#8a7560; --card-bg:rgba(255,255,255,0.06); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);height:100vh;overflow:hidden;touch-action:manipulation;}
+
+/* SCREENS */
+.screen{display:none;height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* HOME */
+#home{background:linear-gradient(145deg,#0d0d1f 0%,#1A1A2E 50%,#0d1b10 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;}
+#home::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(200,151,58,0.12) 0%,transparent 70%);top:-150px;right:-150px;pointer-events:none;}
+#home::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(45,106,79,0.15) 0%,transparent 70%);bottom:-100px;left:-100px;pointer-events:none;}
+.home-inner{text-align:center;z-index:1;padding:20px;}
+.home-kicker{font-size:11px;letter-spacing:6px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
+.home-title{font-family:'Playfair Display',serif;font-size:72px;font-weight:900;line-height:1;color:var(--white);margin-bottom:6px;}
+.home-title span{color:var(--gold);}
+.home-meaning{font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:6px;}
+.home-sub{font-size:15px;color:rgba(255,255,255,0.5);margin-bottom:48px;letter-spacing:.5px;}
+.home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px;max-width:680px;}
+.home-btn{background:var(--card-bg);border:1px solid rgba(200,151,58,0.2);border-radius:var(--radius);padding:28px 16px;cursor:pointer;transition:all .25s ease;backdrop-filter:blur(10px);user-select:none;}
+.home-btn:active{transform:scale(0.95);background:rgba(200,151,58,0.15);}
+.home-btn-icon{font-size:30px;margin-bottom:10px;}
+.home-btn-label{font-size:13px;font-weight:700;color:var(--gold-light);}
+.home-btn-desc{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;}
+.admin-link{font-size:11px;color:rgba(255,255,255,0.2);cursor:pointer;letter-spacing:2px;text-transform:uppercase;border:none;background:none;padding:8px 16px;}
+.admin-link:active{color:var(--gold);}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:rgba(0,0,0,0.35);border-bottom:1px solid rgba(200,151,58,0.15);flex-shrink:0;}
+.topbar-title{font-family:'Playfair Display',serif;font-size:19px;color:var(--gold);}
+.back-btn{background:rgba(200,151,58,0.15);border:1px solid rgba(200,151,58,0.3);color:var(--gold);border-radius:50px;padding:8px 20px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;user-select:none;}
+.back-btn:active{transform:scale(0.95);background:rgba(200,151,58,0.3);}
+
+/* GUIDE */
+#guide{background:linear-gradient(160deg,#0d0d1f,#1A1A2E);}
+.guide-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.guide-intro{text-align:center;margin-bottom:24px;}
+.guide-intro h2{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:6px;}
+.guide-intro p{font-size:13px;color:rgba(255,255,255,0.45);}
+.rover-status{margin-bottom:18px;background:rgba(45,106,79,0.2);border:1px solid rgba(45,106,79,0.4);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;font-size:13px;}
+.rover-dot{width:10px;height:10px;border-radius:50%;background:var(--green2);box-shadow:0 0 8px var(--green2);flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topic-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.topic-card{background:var(--card-bg);border:1px solid rgba(200,151,58,0.2);border-radius:var(--radius);padding:24px 20px;cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden;user-select:none;}
+.topic-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .3s ease;}
+.topic-card.active-topic::before,.topic-card:active::before{transform:scaleX(1);}
+.topic-card:active{transform:scale(0.97);border-color:var(--gold);background:rgba(200,151,58,0.1);}
+.topic-card.active-topic{border-color:var(--gold);background:rgba(200,151,58,0.08);}
+.topic-num{font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
+.topic-title{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px;}
+.topic-desc{font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;}
+.narration-panel{background:linear-gradient(135deg,#0d1b10,#1A1A2E);border:1px solid rgba(200,151,58,0.2);border-radius:var(--radius);padding:22px;margin-top:18px;display:none;}
+.narration-panel.visible{display:block;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.narration-label{font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;}
+.narration-text{font-size:14px;line-height:1.8;color:rgba(255,255,255,0.82);}
+.narration-text p{margin-bottom:10px;}
+.narration-source{font-size:11px;color:rgba(255,255,255,0.28);margin-top:10px;}
+.quiz-btn-wrap{margin-top:14px;text-align:right;}
+.quiz-launch-btn{background:var(--gold);color:var(--navy);border:none;border-radius:50px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;user-select:none;}
+.quiz-launch-btn:active{transform:scale(0.95);}
+
+/* QUIZ */
+#quiz{background:linear-gradient(160deg,#0d0d1f,#1A1A2E);}
+.quiz-body{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;align-items:center;}
+.quiz-topic-select{text-align:center;width:100%;max-width:580px;}
+.quiz-topic-select-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.quiz-topic-btns{display:grid;gap:12px;}
+.quiz-topic-btn{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px 20px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer;text-align:left;transition:all .2s;user-select:none;}
+.quiz-topic-btn:active{transform:scale(0.97);}
+.quiz-active{display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;}
+.quiz-active.visible{display:flex;}
+.quiz-progress{width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:24px;overflow:hidden;}
+.quiz-progress-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .4s ease;}
+.quiz-topic-label{font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;text-align:center;}
+.quiz-q-num{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:6px;text-align:center;}
+.quiz-question{font-family:'Playfair Display',serif;font-size:24px;line-height:1.4;text-align:center;max-width:680px;margin-bottom:28px;}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+.quiz-opt{background:var(--card-bg);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px 16px;font-size:15px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s ease;font-family:'DM Sans',sans-serif;user-select:none;}
+.quiz-opt:active{transform:scale(0.97);}
+.quiz-opt.correct{background:rgba(45,106,79,0.35);border-color:var(--green2);color:#90e0b0;}
+.quiz-opt.wrong{background:rgba(139,38,53,0.35);border-color:#c0394a;color:#f0a0a8;}
+.quiz-opt.disabled{pointer-events:none;}
+.quiz-feedback{margin-top:18px;font-size:15px;text-align:center;min-height:24px;font-weight:600;}
+.quiz-feedback.ok{color:var(--green2);}
+.quiz-feedback.bad{color:#e05060;}
+.quiz-next-btn{margin-top:18px;background:var(--gold);color:var(--navy);border:none;border-radius:50px;padding:13px 38px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:none;transition:all .2s;user-select:none;}
+.quiz-next-btn:active{transform:scale(0.95);}
+.quiz-result{display:none;text-align:center;padding:16px 0;width:100%;max-width:580px;}
+.quiz-result.visible{display:block;}
+.result-score{font-family:'Playfair Display',serif;font-size:88px;font-weight:900;color:var(--gold);line-height:1;}
+.result-label{font-size:17px;color:rgba(255,255,255,0.5);margin:6px 0 20px;}
+.result-msg{font-size:19px;margin-bottom:28px;}
+.visitor-form{text-align:left;width:100%;max-width:380px;margin:0 auto 20px;}
+.visitor-form label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:6px;}
+.visitor-form input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,151,58,0.3);border-radius:10px;padding:13px 15px;color:var(--white);font-size:16px;margin-bottom:14px;font-family:'DM Sans',sans-serif;outline:none;}
+.visitor-form input:focus{border-color:var(--gold);}
+.save-score-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:50px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:all .2s;user-select:none;}
+.save-score-btn:active{transform:scale(0.97);}
+.skip-btn{background:none;border:none;color:rgba(255,255,255,0.28);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:8px;}
+
+/* LEADERBOARD */
+#leaderboard{background:linear-gradient(160deg,#0d0d1f,#1A1A2E);}
+.lb-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.lb-title{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:4px;}
+.lb-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:20px;}
+.lb-filter{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.lb-filter-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.55);border-radius:50px;padding:7px 16px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;user-select:none;}
+.lb-filter-btn:active,.lb-filter-btn.active{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700;}
+.lb-table{width:100%;border-collapse:collapse;}
+.lb-table th{text-align:left;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:9px 12px;border-bottom:1px solid rgba(200,151,58,0.2);}
+.lb-table td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px;}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:700;}
+.rank-1{background:#FFD700;color:#000;}
+.rank-2{background:#C0C0C0;color:#000;}
+.rank-3{background:#CD7F32;color:#fff;}
+.rank-other{background:rgba(255,255,255,0.1);color:var(--white);}
+.score-pill{background:rgba(45,106,79,0.3);color:#90e0b0;border-radius:50px;padding:3px 11px;font-size:12px;font-weight:600;}
+.empty-state{text-align:center;padding:50px 20px;color:rgba(255,255,255,0.28);}
+.empty-state p{font-size:14px;margin-top:8px;}
+
+/* ADMIN */
+#admin{background:#0a0a14;}
+.admin-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.admin-title{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:4px;}
+.admin-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:24px;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(200,151,58,0.15);border-radius:14px;padding:18px;}
+.stat-val{font-family:'Playfair Display',serif;font-size:38px;color:var(--gold);}
+.stat-label{font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;}
+.admin-section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.clear-btn{background:rgba(139,38,53,0.2);border:1px solid rgba(139,38,53,0.4);color:#e05060;border-radius:10px;padding:10px 20px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;user-select:none;}
+.clear-btn:active{transform:scale(0.95);}
+
+/* PIN MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.modal-overlay.visible{display:flex;}
+.modal-box{background:var(--navy2);border:1px solid rgba(200,151,58,0.3);border-radius:24px;padding:34px;width:300px;text-align:center;}
+.modal-box h3{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px;}
+.modal-box p{font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:18px;}
+.pin-input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(200,151,58,0.3);border-radius:10px;padding:13px;color:var(--white);font-size:22px;letter-spacing:8px;text-align:center;margin-bottom:14px;font-family:'DM Sans',sans-serif;outline:none;}
+.pin-input:focus{border-color:var(--gold);}
+.modal-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:50px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:all .2s;user-select:none;}
+.modal-btn:active{transform:scale(0.97);}
+.modal-cancel{background:none;border:none;color:rgba(255,255,255,0.28);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:6px;}
+.pin-error{color:#e05060;font-size:12px;margin-top:4px;display:none;}
+
+/* TOAST */
+.rover-signal{position:fixed;bottom:28px;right:28px;background:var(--green);border-radius:50px;padding:12px 22px;font-size:13px;font-weight:600;display:none;z-index:50;animation:slideUp .3s ease;box-shadow:0 4px 20px rgba(45,106,79,0.4);}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:rgba(200,151,58,0.3);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-inner">
+    <div class="home-kicker">Olongapo City &middot; Cultural Heritage Project</div>
+    <div class="home-title">SALIN-<span>LAHI</span></div>
+    <div class="home-meaning">"Passing down heritage through generations"</div>
+    <div class="home-sub">Preserving Tradition &middot; Powering Innovation</div>
+    <div class="home-grid">
+      <div class="home-btn" id="btn-guide">
+        <div class="home-btn-icon">&#127963;</div>
+        <div class="home-btn-label">Heritage Guide</div>
+        <div class="home-btn-desc">Explore cultural topics</div>
+      </div>
+      <div class="home-btn" id="btn-quiz">
+        <div class="home-btn-icon">&#10067;</div>
+        <div class="home-btn-label">Take the Quiz</div>
+        <div class="home-btn-desc">Test your knowledge</div>
+      </div>
+      <div class="home-btn" id="btn-lb">
+        <div class="home-btn-icon">&#127942;</div>
+        <div class="home-btn-label">Leaderboard</div>
+        <div class="home-btn-desc">Top scores</div>
+      </div>
+    </div>
+    <button class="admin-link" id="btn-admin">&#9881; Admin Dashboard</button>
+  </div>
+</div>
+
+<!-- HERITAGE GUIDE -->
+<div id="guide" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">Heritage Guide</span>
+    <button class="back-btn" id="guide-back">&#8592; Home</button>
+  </div>
+  <div class="guide-body">
+    <div class="guide-intro">
+      <h2>Explore Olongapo &amp; Aeta Heritage</h2>
+      <p>Tap a topic &mdash; the SALIN-LAHI Rover navigates to that station and begins narration.</p>
+    </div>
+    <div class="rover-status">
+      <div class="rover-dot"></div>
+      <span id="rover-status-text">Rover is ready at home position</span>
+    </div>
+    <div class="topic-grid" id="topic-grid"></div>
+    <div class="narration-panel" id="narration-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="narration-label" style="margin-bottom:0">Cultural Narration</div>
+        <div style="display:flex;gap:8px;">
+          <button id="tts-play-btn" style="background:var(--gold);color:var(--navy);border:none;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;display:none;">&#9654; Listen</button>
+          <button id="tts-stop-btn" style="background:rgba(139,38,53,0.3);border:1px solid rgba(139,38,53,0.5);color:#f0a0a8;border-radius:50px;padding:10px 18px;font-size:13px;cursor:pointer;display:none;">&#9632; Stop</button>
+        </div>
+      </div>
+      <div id="tts-status" style="font-size:12px;color:var(--green2);margin-bottom:8px;min-height:16px;display:none;">Reading aloud...</div>
+      <div class="narration-text" id="narration-text"></div>
+      <div class="narration-source" id="narration-source"></div>
+      <div class="quiz-btn-wrap">
+        <button class="quiz-launch-btn" id="quiz-from-guide-btn">Take Quiz on This Topic &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">Cultural Quiz</span>
+    <button class="back-btn" id="quiz-back">&#8592; Home</button>
+  </div>
+  <div class="quiz-body">
+    <div class="quiz-topic-select" id="quiz-topic-select">
+      <div class="quiz-topic-select-label">Choose a Topic</div>
+      <div class="quiz-topic-btns" id="quiz-topic-btns"></div>
+    </div>
+    <div class="quiz-active" id="quiz-active">
+      <div class="quiz-progress"><div class="quiz-progress-fill" id="quiz-progress-fill"></div></div>
+      <div class="quiz-topic-label" id="quiz-topic-label"></div>
+      <div class="quiz-q-num" id="quiz-q-num"></div>
+      <div class="quiz-question" id="quiz-question"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+      <button class="quiz-next-btn" id="quiz-next-btn">Next &#8594;</button>
+    </div>
+    <div class="quiz-result" id="quiz-result">
+      <div class="result-score" id="result-score"></div>
+      <div class="result-label">out of <span id="result-total"></span> questions</div>
+      <div class="result-msg" id="result-msg"></div>
+      <div class="visitor-form">
+        <label>Your Name (optional)</label>
+        <input type="text" id="visitor-name" placeholder="e.g. Maria Santos" maxlength="40">
+        <label>Grade / School</label>
+        <input type="text" id="visitor-grade" placeholder="e.g. Grade 8 - Olongapo NHS" maxlength="50">
+        <button class="save-score-btn" id="save-score-btn">Save My Score</button>
+        <button class="skip-btn" id="skip-btn">Skip and go home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboard" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">Leaderboard</span>
+    <button class="back-btn" id="lb-back">&#8592; Home</button>
+  </div>
+  <div class="lb-body">
+    <div class="lb-title">Top Visitors</div>
+    <div class="lb-sub">Quiz scores across all heritage topics</div>
+    <div class="lb-filter" id="lb-filter"></div>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Name</th><th>School / Grade</th><th>Topic</th><th>Score</th><th>Date</th></tr></thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+    <div class="empty-state" id="lb-empty" style="display:none;">
+      <div style="font-size:38px">&#128074;</div>
+      <p>No scores yet. Take the quiz first!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">Research Analytics</span>
+    <button class="back-btn" id="admin-back">&#8592; Home</button>
+  </div>
+  <div class="admin-body">
+    <div class="admin-title">SALIN-LAHI Cultural Awareness Research</div>
+    <div class="admin-sub">Self-learning analytics dashboard</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-visitors">0</div><div class="stat-label">Total Participants</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-avg">-</div><div class="stat-label">Avg Cultural Awareness</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-top">-</div><div class="stat-label">Highest Score</div></div>
+    </div>
+    <div class="admin-section-title">AI-Generated Insights</div>
+    <div id="insights-box" style="margin-bottom:24px"></div>
+    <div class="admin-section-title">Score Trend Over Time</div>
+    <div id="trend-chart" style="background:rgba(255,255,255,.03);border-radius:14px;padding:18px;margin-bottom:24px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+      <div>
+        <div class="admin-section-title">By Topic</div>
+        <div id="topic-breakdown"></div>
+      </div>
+      <div>
+        <div class="admin-section-title">By Grade / Generation</div>
+        <div id="generation-breakdown"></div>
+      </div>
+    </div>
+    <div class="admin-section-title">Questions Students Struggle With</div>
+    <div id="weak-questions" style="margin-bottom:24px"></div>
+    <div class="admin-section-title">Recent Entries</div>
+    <table class="lb-table" style="margin-bottom:24px;">
+      <thead><tr><th>Name</th><th>Topic</th><th>Score</th><th>Grade</th><th>Date</th></tr></thead>
+      <tbody id="admin-table"></tbody>
+    </table>
+    <div class="admin-section-title">Actions</div>
+    <button class="clear-btn" id="clear-btn">Clear All Data</button>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal-box">
+    <h3>Admin Access</h3>
+    <p>Enter the 4-digit PIN</p>
+    <input class="pin-input" id="pin-input" type="password" maxlength="4" inputmode="numeric" placeholder="...">
+    <div class="pin-error" id="pin-error">Incorrect PIN. Try again.</div>
+    <button class="modal-btn" id="pin-enter-btn">Enter</button>
+    <button class="modal-cancel" id="pin-cancel-btn">Cancel</button>
+  </div>
+</div>
+
+<div class="rover-signal" id="rover-signal">Signal sent to Rover</div>
+
+<script>
+
+var NARRATIONS = {"aeta-history": "The Aeta are considered among the earliest inhabitants of the Philippine archipelago. Archaeological evidence suggests their ancestors arrived over 30,000 years ago via land bridges from mainland Asia during the last Ice Age. They belong to the Negrito peoples, characterized by small stature and dark curly hair.\n\nIn Luzon, Aeta communities have traditionally lived in mountainous and forested regions, particularly in Zambales, Pampanga, and Tarlac areas surrounding Subic Bay and Mount Pinatubo. They developed remarkable skills in forest survival, hunting with bows and arrows, and gathering wild plants for food and medicine.\n\nThe 1991 eruption of Mount Pinatubo was devastating for thousands of Aeta families. Many were forcibly evacuated and displaced from their ancestral lands. Despite these hardships, Aeta communities showed extraordinary resilience, with many returning to rebuild while others integrated into lowland communities.\n\nToday, the Aeta people continue to maintain aspects of their traditional culture while adapting to modern Philippine society. Programs work to protect their ancestral domain rights and preserve their unique cultural heritage for future generations.", "livelihood": "The traditional livelihood of the Aeta is deeply connected to the forest. As hunter-gatherers, they developed sophisticated knowledge of their ecosystem over thousands of years, making them among the most skilled forest dwellers in Southeast Asia.\n\nHunting is central to Aeta culture, traditionally done using bows and arrows crafted from bamboo and rattan. Men hunt wild boar, deer, and birds, while women and children gather roots, tubers, fruits, and medicinal plants. This knowledge of edible and medicinal plants is passed down through generations as a precious cultural treasure.\n\nFishing in rivers using bamboo traps, nets, and spears provides another important food source. The Aeta also practice kaingin, a form of shifting cultivation where small forest plots are cleared and farmed for a season before moving on, allowing the land to recover naturally.\n\nIn more recent times, Aeta communities have adapted to include weaving, craft-making, and selling forest products at local markets. Some near Olongapo and Subic have found employment in the Subic Bay Freeport Zone while maintaining their cultural identity.", "music": "Music and oral tradition are the living memory of Aeta culture, carrying stories, history, and spiritual knowledge across generations without written language. Every song, chant, and instrument holds cultural meaning passed down from ancestors.\n\nTraditional Aeta music features instruments crafted from natural materials. The palendag is a bamboo flute that produces a haunting, breathy tone. The kudlong is a two-stringed instrument similar to a lute. Percussion instruments include bamboo clappers and drums made from hollowed logs covered with animal skin.\n\nAeta songs serve many purposes: ritual healing ceremonies, celebrating harvests and successful hunts, storytelling about ancestors and spirits, and marking life events such as birth, marriage, and death. The duldug is a spiritual ritual involving music, dance, and offerings to connect the community with ancestral spirits and forest deities.\n\nOral traditions among the Aeta preserve detailed knowledge of forest plants, animal behavior, weather patterns, and community history. Elders are considered living libraries, and sitting with elders to hear their stories is a form of education that has sustained Aeta culture for thousands of years.", "tools": "The material culture of the Aeta reflects thousands of years of innovation using only forest resources. Every tool is a masterpiece of practical design, crafted with skill and intimate knowledge of natural materials.\n\nBamboo is the most versatile material in Aeta tool-making. It is used to make shelter frames, cooking vessels, water containers, musical instruments, hunting weapons, fish traps, and everyday utensils. Different species of bamboo are selected based on their flexibility, strength, and diameter.\n\nThe pana, or bow and arrow, is the most iconic Aeta tool. Bows are crafted from flexible hardwood or bamboo, strung with plant fiber or rattan. Arrows are tipped with fire-hardened bamboo or sharpened bone. Aeta hunters are known for exceptional accuracy with these weapons.\n\nRattan is woven into baskets, traps, mats, and carrying bags. The takub is a woven basket trap used to catch small animals and birds. Traditional Aeta jewelry includes beaded necklaces and bracelets made from seeds, shells, and natural materials, each design carrying cultural significance.", "values": "The cultural values of the Aeta form the invisible foundation of their society, shaping relationships, decisions, spiritual life, and connection to the natural world. Understanding these values is key to understanding Aeta identity.\n\nAeta spirituality centers on Mangindusa, a supreme being who maintains cosmic balance. The natural world is considered alive and inhabited by spirits called anito. Maintaining respectful relationships with these spirits through rituals, offerings, and responsible use of resources is central to Aeta spiritual practice.\n\nThe role of the alagad, or spiritual healer, is one of the most important in Aeta communities. Alagad serve as mediators between the human and spirit worlds, performing healing rituals, blessing hunts, resolving conflicts, and guiding the community. Their knowledge of medicinal plants and spiritual practices is deeply respected.\n\nAeta social structure is fundamentally egalitarian. There are no kings or rigid castes. Leadership is earned through wisdom, generosity, and skill. The concept of kapwa, meaning shared identity and community, means individual wellbeing is inseparable from the group.", "olongapo-origins": "Long before Olongapo became a city, the land along the shores of Subic Bay was home to the Aeta people, the original inhabitants of Luzon. These Negrito communities lived in the forests of the Zambales mountains and coastal lowlands, relying on hunting, gathering, and fishing for thousands of years.\n\nThe name Olongapo is believed to derive from Aeta words meaning land of the chief, a reference that ties the very identity of the city to its indigenous founders.\n\nDuring the Spanish colonial period from 1565 to 1898, Augustinian friars established settlements in the Subic Bay area. The Aeta gradually interacted with lowland Christian settlers, Tagalog and Kapampangan migrants who farmed the coastal plains. This blending of peoples formed the ancestral roots of modern Olongapo.\n\nBy the late 1800s, the Spanish military recognized Subic Bay strategic value and established a naval arsenal, marking the beginning of Olongapo long relationship with naval power.", "olongapo-naval": "When the Americans took control of the Philippines after the Spanish-American War of 1898, they recognized Subic Bay as one of the finest natural harbors in Asia. By 1902, Subic Bay became a major U.S. Navy base.\n\nThe U.S. Naval Base Subic Bay grew to become one of the largest American military installations outside the continental United States. At its peak, it employed tens of thousands of Filipinos. The base brought enormous economic activity, shipyards, repair facilities, and a bustling commercial district just outside the gates.\n\nOlongapo City was formally chartered as a city in 1966 under Republic Act No. 4645. Mayor Richard Gordon later transformed Olongapo in the 1980s into one of the most progressive and crime-free cities in the Philippines.\n\nWhen the U.S. Navy departed in 1992, the Subic Bay Metropolitan Authority was created to convert the former base into a free port, one of the most successful base conversion projects in the world.", "olongapo-people": "Olongapo is a melting pot shaped by centuries of migration, colonialism, and cultural exchange. Its people, called Olongapenos, are a diverse mix of Aeta descendants, Tagalog and Kapampangan settlers, Ilocano migrants, and families with American or other foreign ancestry from the naval base era.\n\nThe Aeta communities remain present in the mountains surrounding Olongapo and Subic. Many Aeta families have integrated into city life while preserving their indigenous identity, their craftsmanship, herbal medicine knowledge, and oral traditions.\n\nOlongapo is known for its vibrant festivals. The Olongapo City Founding Anniversary on February 9 celebrates the city charter with parades and cultural shows. The Subic Bay Festival highlights the maritime and cultural heritage of the bay. During these events, Aeta cultural performances, traditional dances, music, and craft displays are featured as proud symbols of the region deepest roots.\n\nDespite rapid modernization through the Subic Bay Freeport Zone, Olongapenos maintain a strong connection to their layered history, from Aeta forest dwellers to Spanish missionaries, American sailors, and today dynamic urban community."};
+
+var ADMIN_PIN = "1234";
+
+var TOPICS = [
+  { id:"aeta-history", title:"Aeta History", desc:"Origins, migration, and survival of the Aeta people of Luzon", color:"#C8973A", station:"Station A",
+    questions:[
+      { q:"The Aeta are considered among the earliest inhabitants of which island?", opts:["Mindanao","Luzon","Palawan","Visayas"], ans:1 },
+      { q:"The Aeta are classified as what type of indigenous people?", opts:["Austronesian","Negrito","Malay","Melanesian"], ans:1 },
+      { q:"Which event in 1991 displaced many Aeta communities in Pampanga?", opts:["Typhoon Yolanda","Mt. Pinatubo eruption","Marawi siege","Cotabato earthquake"], ans:1 },
+      { q:"The Aeta are known for their exceptional skill in:", opts:["Deep-sea fishing","Hunting and forest survival","Rice terrace farming","Metalwork"], ans:1 },
+      { q:"What is a traditional Aeta dwelling called?", opts:["Bahay kubo","Payag","Umaw","Balangay"], ans:2 }
+    ]
+  },
+  { id:"livelihood", title:"Traditional Livelihood", desc:"Farming, hunting, gathering, and forest-based economy", color:"#2D6A4F", station:"Station B",
+    questions:[
+      { q:"What is the primary traditional livelihood of Aeta communities?", opts:["Rice farming","Hunting and gathering","Commercial fishing","Weaving cloth"], ans:1 },
+      { q:"Which weapon is traditionally used by the Aeta for hunting?", opts:["Spear and bow","Kris sword","Kampilan","Lantaka cannon"], ans:0 },
+      { q:"Aeta practice kaingin - what is this?", opts:["River fishing","Slash-and-burn farming","Root gathering","Bamboo crafting"], ans:1 },
+      { q:"Which material do Aeta use for making traps?", opts:["Coconut husks","Rattan and bamboo","Sugarcane","Cogon grass"], ans:1 },
+      { q:"Aeta communities are known for their knowledge of:", opts:["Ocean currents","Medicinal forest plants","Gold mining","Textile dyeing"], ans:1 }
+    ]
+  },
+  { id:"music", title:"Indigenous Music", desc:"Songs, instruments, and oral traditions of the Aeta", color:"#6B3FA0", station:"Station C",
+    questions:[
+      { q:"What is a traditional Aeta musical instrument made from bamboo?", opts:["Kulintang","Kudyapi","Palendag","Gangsa"], ans:2 },
+      { q:"Aeta oral traditions are mainly transmitted through:", opts:["Written manuscripts","Songs and storytelling","Stone carvings","Woven patterns"], ans:1 },
+      { q:"Music in Aeta culture is primarily used for:", opts:["Entertainment only","Rituals, healing, and community celebrations","Trade negotiations","War declarations"], ans:1 },
+      { q:"The duldug among Aeta refers to a traditional:", opts:["Hunting technique","Spirit ritual with music and dance","Weaving pattern","Cooking method"], ans:1 },
+      { q:"Which best describes Aeta musical tradition?", opts:["Written sheet music","Oral transmission from elders","Formal school training","Church choir singing"], ans:1 }
+    ]
+  },
+  { id:"tools", title:"Traditional Tools", desc:"Crafted implements used in daily Aeta life and survival", color:"#8B2635", station:"Station D",
+    questions:[
+      { q:"What material do Aeta primarily use to craft tools and shelters?", opts:["Metal ore","Bamboo and rattan","Clay and stone","Seashells"], ans:1 },
+      { q:"The Aeta pana is a traditional:", opts:["Cooking pot","Bow and arrow","Fish trap","Sleeping mat"], ans:1 },
+      { q:"Fire-making among traditional Aeta uses:", opts:["Flint stones","Friction between bamboo sticks","Volcanic rocks","Dry coconut shells"], ans:1 },
+      { q:"What is a takub in Aeta culture?", opts:["A woven basket trap","A musical instrument","A healing ritual","A leadership title"], ans:0 },
+      { q:"Aeta are known for crafting which type of traditional jewelry?", opts:["Gold bangles","Shell and seed beaded accessories","Silver rings","Copper necklaces"], ans:1 }
+    ]
+  },
+  { id:"values", title:"Cultural Values", desc:"Beliefs, social structure, and spiritual life of the Aeta", color:"#1565C0", station:"Station E",
+    questions:[
+      { q:"What is the Aeta term for their supreme being or God?", opts:["Bathala","Mangindusa","Apo","Diwata"], ans:1 },
+      { q:"Aeta social structure is generally described as:", opts:["Hierarchical with kings","Egalitarian and community-based","Caste-based","Matriarchal monarchy"], ans:1 },
+      { q:"What role does the alagad play in Aeta communities?", opts:["Military leader","Spiritual healer and mediator","Trade negotiator","Agricultural expert"], ans:1 },
+      { q:"How do Aeta communities traditionally make important decisions?", opts:["Elders vote alone","Community consensus and council","The youngest adult decides","Women leaders only"], ans:1 },
+      { q:"The concept of kapwa is central to:", opts:["Aeta economic trading","Aeta values of community and unity","Military strategy","Land ownership"], ans:1 }
+    ]
+  },
+  { id:"olongapo-origins", title:"Olongapo: Origins and Ancestors", desc:"How Olongapo began, from Aeta settlements to Spanish-era villages", color:"#A0522D", station:"Station F",
+    questions:[
+      { q:"What indigenous group are the original inhabitants of the Olongapo area?", opts:["Igorot","Aeta Negrito","Lumad","Mangyan"], ans:1 },
+      { q:"What does the name Olongapo most likely trace back to?", opts:["A Spanish word for port","An Aeta word or phrase","A Chinese trading term","A Tagalog surname"], ans:1 },
+      { q:"Which religious order established settlements near Subic Bay during Spanish rule?", opts:["Jesuits","Dominicans","Augustinians","Franciscans"], ans:2 },
+      { q:"Which migrant groups mixed with the Aeta to form the ancestral population of Olongapo?", opts:["Ilocano and Bicolano","Tagalog and Kapampangan","Cebuano and Waray","Maranao and Tausug"], ans:1 },
+      { q:"What did the Spanish establish in Subic Bay in the late 1800s?", opts:["A gold mine","A naval arsenal","A cathedral","A sugar plantation"], ans:1 }
+    ]
+  },
+  { id:"olongapo-naval", title:"Naval Heritage and American Era", desc:"From Spanish arsenal to US Naval Base Subic Bay", color:"#1A5276", station:"Station G",
+    questions:[
+      { q:"When did the United States formally establish a major naval base in Subic Bay?", opts:["1850","1902","1935","1945"], ans:1 },
+      { q:"Olongapo was officially chartered as a city in which year?", opts:["1945","1955","1966","1972"], ans:2 },
+      { q:"Which mayor transformed Olongapo into a model city in the 1980s?", opts:["Remigio Mathay","Richard Gordon","Jesse Robredo","Rodrigo Duterte"], ans:1 },
+      { q:"What happened to Subic Bay Naval Base after the U.S. Navy left in 1992?", opts:["It was demolished","It became a military academy","It became Subic Bay Freeport Zone","It returned to Zambales province"], ans:2 },
+      { q:"Which event in 1991 contributed to the U.S. leaving Subic Bay?", opts:["Typhoon Yolanda","Mt. Pinatubo eruption","Baguio earthquake","Flooding of Manila Bay"], ans:1 }
+    ]
+  },
+  { id:"olongapo-people", title:"People and Local Culture", desc:"The diverse communities, festivals, and identity of Olongapo", color:"#7B241C", station:"Station H",
+    questions:[
+      { q:"What term refers to the people of Olongapo City?", opts:["Olongapenos","Zambaleños","Subicanos","Kapampangans"], ans:0 },
+      { q:"Which indigenous community has roots in the mountains surrounding Olongapo?", opts:["Igorot","Mangyan","Aeta","Lumad"], ans:2 },
+      { q:"When is the Olongapo City Founding Anniversary celebrated?", opts:["January 1","February 9","June 12","November 30"], ans:1 },
+      { q:"The Subic Bay Freeport Zone was created to:", opts:["House military personnel","Convert the naval base into an economic zone","Build a new capital","Create an Aeta reservation"], ans:1 },
+      { q:"Aeta cultural contributions in Olongapo festivals include:", opts:["Ballet and opera","Traditional dances, music, and crafts","Western pop music","Spanish flamenco"], ans:1 }
+    ]
+  }
+];
+
+function getScores() { try { return JSON.parse(localStorage.getItem("salinlahi_scores") || "[]"); } catch(e) { return []; } }
+function saveScores(a) { localStorage.setItem("salinlahi_scores", JSON.stringify(a)); }
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+}
+
+// Button wiring
+document.getElementById("btn-guide").addEventListener("click", function(){ showScreen("guide"); });
+document.getElementById("btn-quiz").addEventListener("click", function(){ showScreen("quiz"); initQuiz(); });
+document.getElementById("btn-lb").addEventListener("click", function(){ showScreen("leaderboard"); loadLeaderboard(); });
+document.getElementById("btn-admin").addEventListener("click", showPinModal);
+document.getElementById("guide-back").addEventListener("click", function(){ ttsStop(); showScreen("home"); });
+document.getElementById("quiz-back").addEventListener("click", function(){ showScreen("home"); });
+document.getElementById("lb-back").addEventListener("click", function(){ showScreen("home"); });
+document.getElementById("admin-back").addEventListener("click", function(){ showScreen("home"); });
+document.getElementById("quiz-from-guide-btn").addEventListener("click", launchQuizFromGuide);
+document.getElementById("quiz-next-btn").addEventListener("click", nextQuestion);
+document.getElementById("save-score-btn").addEventListener("click", saveScore);
+document.getElementById("skip-btn").addEventListener("click", function(){ showScreen("home"); });
+document.getElementById("pin-enter-btn").addEventListener("click", checkPin);
+document.getElementById("pin-cancel-btn").addEventListener("click", hidePinModal);
+document.getElementById("clear-btn").addEventListener("click", clearData);
+document.getElementById("pin-input").addEventListener("keydown", function(e){ if(e.key==="Enter") checkPin(); });
+document.getElementById("tts-play-btn").addEventListener("click", ttsPlay);
+document.getElementById("tts-stop-btn").addEventListener("click", ttsStop);
+
+// Build topic grid
+function buildTopicGrid() {
+  var g = document.getElementById("topic-grid"), h = "";
+  for (var i=0; i<TOPICS.length; i++) {
+    var t = TOPICS[i], n = (i+1<10?"0":"")+(i+1);
+    h += '<div class="topic-card" data-id="'+t.id+'">';
+    h += '<div class="topic-num">'+n+" &mdash; "+t.station+"</div>";
+    h += '<div class="topic-title">'+t.title+"</div>";
+    h += '<div class="topic-desc">'+t.desc+"</div></div>";
+  }
+  g.innerHTML = h;
+  g.querySelectorAll(".topic-card").forEach(function(c){
+    c.addEventListener("click", function(){ selectTopic(this.getAttribute("data-id")); });
+  });
+}
+
+var currentTopicId = null;
+
+function selectTopic(id) {
+  currentTopicId = id;
+  document.querySelectorAll(".topic-card").forEach(function(c){ c.classList.remove("active-topic"); });
+  document.querySelector("[data-id="+id+"]").classList.add("active-topic");
+  var t = TOPICS.find(function(x){ return x.id===id; });
+  var st = document.getElementById("rover-status-text");
+  st.textContent = "Rover moving to "+t.station+" - "+t.title+"...";
+  showRoverSignal();
+  setTimeout(function(){ st.textContent = "Rover at "+t.station+": "+t.title+" - narrating..."; }, 2000);
+  showNarration(t);
+}
+
+function showRoverSignal() {
+  var el = document.getElementById("rover-signal");
+  el.style.display = "block";
+  setTimeout(function(){ el.style.display="none"; }, 3000);
+}
+
+function showNarration(topic) {
+  var panel = document.getElementById("narration-panel");
+  var textEl = document.getElementById("narration-text");
+  var sourceEl = document.getElementById("narration-source");
+  panel.classList.add("visible");
+  var text = NARRATIONS[topic.id] || "Narration coming soon.";
+  var paras = text.split("\n\n"), h = "";
+  for (var i=0; i<paras.length; i++) {
+    if (paras[i].trim()) h += '<p style="margin-bottom:10px">'+paras[i].trim()+"</p>";
+  }
+  textEl.innerHTML = h;
+  sourceEl.innerHTML = "Source: <span style='color:var(--gold)'>SALIN-LAHI Cultural Heritage Archive</span>";
+  var pb = document.getElementById("tts-play-btn");
+  var sb = document.getElementById("tts-stop-btn");
+  pb.style.display = "inline-block";
+  sb.style.display = "none";
+}
+
+function launchQuizFromGuide() {
+  if (!currentTopicId) return;
+  showScreen("quiz");
+  startQuizForTopic(currentTopicId);
+}
+
+// TTS
+var ttsUtterance = null;
+var ttsChunks = [];
+var ttsIdx = 0;
+
+function ttsPlay() {
+  if (!window.speechSynthesis) { alert("Text-to-speech not supported. Please use Chrome."); return; }
+  window.speechSynthesis.cancel();
+  var textEl = document.getElementById("narration-text");
+  var raw = textEl ? (textEl.innerText || textEl.textContent) : "";
+  if (!raw.trim()) return;
+
+  var statusEl = document.getElementById("tts-status");
+  var pb = document.getElementById("tts-play-btn");
+  var sb = document.getElementById("tts-stop-btn");
+  statusEl.style.display = "block";
+  pb.style.display = "none";
+  sb.style.display = "inline-block";
+
+  var sents = raw.match(/[^.!?\n]+[.!?\n]*/g) || [raw];
+  ttsChunks = [];
+  var buf = "";
+  for (var i=0; i<sents.length; i++) {
+    buf += sents[i];
+    if (buf.length > 180 || i===sents.length-1) { if(buf.trim()) ttsChunks.push(buf.trim()); buf=""; }
+  }
+  ttsIdx = 0;
+
+  function speakNext() {
+    if (ttsIdx >= ttsChunks.length) {
+      statusEl.style.display = "none";
+      pb.style.display = "inline-block";
+      sb.style.display = "none";
+      return;
+    }
+    var u = new SpeechSynthesisUtterance(ttsChunks[ttsIdx]);
+    u.lang = "en-US"; u.rate = 0.88; u.pitch = 1.0; u.volume = 1.0;
+    var voices = window.speechSynthesis.getVoices(), pick = null;
+    for (var v=0; v<voices.length; v++) {
+      if (!voices[v].lang || voices[v].lang.indexOf("en")!==0) continue;
+      if (!pick) pick = voices[v];
+      if (voices[v].name.indexOf("Google US")>=0) { pick=voices[v]; break; }
+      if (voices[v].name.indexOf("Google")>=0) pick=voices[v];
+    }
+    if (pick) u.voice = pick;
+    ttsUtterance = u; ttsIdx++;
+    u.onend = function(){ setTimeout(speakNext, 80); };
+    u.onerror = function(e){ if(e.error!=="interrupted"){ statusEl.style.display="none"; pb.style.display="inline-block"; sb.style.display="none"; } };
+    window.speechSynthesis.speak(u);
+  }
+
+  if (window.speechSynthesis.getVoices().length > 0) {
+    speakNext();
+  } else {
+    window.speechSynthesis.onvoiceschanged = function(){ window.speechSynthesis.onvoiceschanged=null; speakNext(); };
+    setTimeout(function(){ if(ttsIdx===0) speakNext(); }, 600);
+  }
+}
+
+function ttsStop() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  ttsChunks = []; ttsIdx = 999;
+  var s=document.getElementById("tts-status"), pb=document.getElementById("tts-play-btn"), sb=document.getElementById("tts-stop-btn");
+  if(s) s.style.display="none";
+  if(pb) pb.style.display="inline-block";
+  if(sb) sb.style.display="none";
+}
+
+// QUIZ
+var quizState = { topic:null, questions:[], current:0, score:0, answers:[] };
+
+function initQuiz() {
+  document.getElementById("quiz-topic-select").style.display = "block";
+  document.getElementById("quiz-active").classList.remove("visible");
+  document.getElementById("quiz-result").classList.remove("visible");
+  var b = document.getElementById("quiz-topic-btns"), h = "";
+  for (var i=0; i<TOPICS.length; i++) {
+    var t = TOPICS[i];
+    h += '<button class="quiz-topic-btn" data-id="'+t.id+'" style="border-color:rgba(255,255,255,0.12)">';
+    h += '<span style="color:'+t.color+';font-weight:700">'+t.title+"</span>";
+    h += '<span style="color:rgba(255,255,255,0.35);font-size:12px;margin-left:8px">- '+t.questions.length+" questions</span></button>";
+  }
+  b.innerHTML = h;
+  b.querySelectorAll(".quiz-topic-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){ startQuizForTopic(this.getAttribute("data-id")); });
+  });
+}
+
+function startQuizForTopic(id) {
+  var t = TOPICS.find(function(x){ return x.id===id; });
+  var q = shuffle(t.questions.slice());
+  quizState = { topic:t, questions:q, current:0, score:0, answers:[] };
+  document.getElementById("quiz-topic-select").style.display = "none";
+  document.getElementById("quiz-result").classList.remove("visible");
+  document.getElementById("quiz-active").classList.add("visible");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  var q = quizState.questions[quizState.current], total = quizState.questions.length;
+  document.getElementById("quiz-progress-fill").style.width = (quizState.current/total*100)+"%";
+  document.getElementById("quiz-topic-label").textContent = quizState.topic.title;
+  document.getElementById("quiz-q-num").textContent = "Question "+(quizState.current+1)+" of "+total;
+  document.getElementById("quiz-question").textContent = q.q;
+  document.getElementById("quiz-feedback").textContent = "";
+  document.getElementById("quiz-feedback").className = "quiz-feedback";
+  document.getElementById("quiz-next-btn").style.display = "none";
+  var o = document.getElementById("quiz-options"), h = "";
+  for (var i=0; i<q.opts.length; i++) h += '<button class="quiz-opt" data-idx="'+i+'">'+q.opts[i]+"</button>";
+  o.innerHTML = h;
+  o.querySelectorAll(".quiz-opt").forEach(function(b){
+    b.addEventListener("click", function(){ answerQuestion(parseInt(this.getAttribute("data-idx"))); });
+  });
+}
+
+function answerQuestion(idx) {
+  var q = quizState.questions[quizState.current];
+  var btns = document.querySelectorAll(".quiz-opt");
+  btns.forEach(function(b){ b.classList.add("disabled"); });
+  var correct = idx===q.ans;
+  btns[idx].classList.add(correct?"correct":"wrong");
+  if (!correct) btns[q.ans].classList.add("correct");
+  quizState.answers.push({ q:q.q, correct:correct, chosen:idx, expected:q.ans });
+  var fb = document.getElementById("quiz-feedback");
+  if (correct) { fb.textContent = "Correct! Well done."; fb.className = "quiz-feedback ok"; quizState.score++; }
+  else { fb.textContent = "Correct answer: "+q.opts[q.ans]; fb.className = "quiz-feedback bad"; }
+  document.getElementById("quiz-next-btn").style.display = "block";
+}
+
+function nextQuestion() {
+  quizState.current++;
+  if (quizState.current >= quizState.questions.length) showResult();
+  else renderQuestion();
+}
+
+function showResult() {
+  document.getElementById("quiz-active").classList.remove("visible");
+  document.getElementById("quiz-result").classList.add("visible");
+  var s=quizState.score, t=quizState.questions.length, p=Math.round(s/t*100);
+  document.getElementById("result-score").textContent = s;
+  document.getElementById("result-total").textContent = t;
+  document.getElementById("result-msg").textContent = p>=80?"Excellent! You know your heritage well!" : p>=60?"Good job! Keep learning about our culture." : "Keep exploring! SALIN-LAHI has more to share.";
+  document.getElementById("visitor-name").value = "";
+  document.getElementById("visitor-grade").value = "";
+}
+
+function saveScore() {
+  var name = document.getElementById("visitor-name").value.trim()||"Anonymous";
+  var grade = document.getElementById("visitor-grade").value.trim()||"-";
+  var now = new Date();
+  var scores = getScores();
+  scores.push({ id:Date.now(), name:name, grade:grade, topic:quizState.topic.title, topicId:quizState.topic.id,
+    score:quizState.score, total:quizState.questions.length, pct:Math.round(quizState.score/quizState.questions.length*100),
+    answers:quizState.answers, date:now.toLocaleDateString("en-PH",{month:"short",day:"numeric",year:"numeric"}),
+    timestamp:now.getTime(), month:now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0") });
+  saveScores(scores);
+  showScreen("leaderboard"); loadLeaderboard();
+}
+
+// LEADERBOARD
+var lbFilter = "all";
+function loadLeaderboard() {
+  var fe = document.getElementById("lb-filter"), h = "";
+  var ids = ["all"].concat(TOPICS.map(function(t){ return t.id; }));
+  ids.forEach(function(id){
+    var label = id==="all"?"All Topics":(TOPICS.find(function(t){ return t.id===id; })||{title:id}).title;
+    h += '<button class="lb-filter-btn'+(lbFilter===id?" active":"")+" data-f="+id+'">'+label+"</button>";
+  });
+  fe.innerHTML = h;
+  fe.querySelectorAll(".lb-filter-btn").forEach(function(b){
+    b.addEventListener("click", function(){ lbFilter=this.getAttribute("data-f"); loadLeaderboard(); });
+  });
+  var scores = getScores();
+  if (lbFilter!=="all") scores = scores.filter(function(s){ return s.topicId===lbFilter; });
+  scores.sort(function(a,b){ return b.pct-a.pct||b.score-a.score; });
+  var empty = document.getElementById("lb-empty"), tb = document.getElementById("lb-body");
+  if (!scores.length) { tb.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  h = "";
+  scores.slice(0,20).forEach(function(s,i){
+    var rc=i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-other";
+    var medal=i===0?"1st":i===1?"2nd":i===2?"3rd":(i+1)+"th";
+    h += "<tr><td><span class='rank-badge "+rc+"'>"+medal+"</span></td>";
+    h += "<td style='font-weight:600'>"+s.name+"</td>";
+    h += "<td style='color:rgba(255,255,255,.5);font-size:13px'>"+s.grade+"</td>";
+    h += "<td style='color:rgba(255,255,255,.55);font-size:13px'>"+s.topic+"</td>";
+    h += "<td><span class='score-pill'>"+s.score+"/"+s.total+" ("+s.pct+"%)</span></td>";
+    h += "<td style='color:rgba(255,255,255,.35);font-size:13px'>"+s.date+"</td></tr>";
+  });
+  tb.innerHTML = h;
+}
+
+// ADMIN
+function loadAdmin() {
+  var scores = getScores();
+  document.getElementById("stat-visitors").textContent = scores.length;
+  if (scores.length>0) {
+    document.getElementById("stat-avg").textContent = Math.round(scores.reduce(function(a,s){ return a+s.pct; },0)/scores.length)+"%";
+    document.getElementById("stat-top").textContent = Math.max.apply(null,scores.map(function(s){ return s.pct; }))+"%";
+  }
+  renderInsights(scores); renderTopicBreakdown(scores); renderGenerationBreakdown(scores);
+  renderTrendChart(scores); renderWeakQuestions(scores); renderRecentTable(scores);
+}
+
+function renderInsights(scores) {
+  var el=document.getElementById("insights-box");
+  if (!el) return;
+  if (scores.length<3) { el.innerHTML='<p style="color:rgba(255,255,255,.35);font-size:13px">Collect at least 3 quiz entries to generate insights.</p>'; return; }
+  var avg=scores.reduce(function(a,s){ return a+s.pct; },0)/scores.length;
+  var insights=[];
+  var level=avg>=75?"HIGH":avg>=50?"MODERATE":"LOW";
+  var lc=avg>=75?"#40916C":avg>=50?"#C8973A":"#e05060";
+  insights.push({ type:"Cultural Awareness Level", color:lc, text:"Average score is "+Math.round(avg)+"%. Overall cultural awareness is "+level+". "+(avg<50?"The rover program is critically needed.":avg<75?"Targeted sessions recommended.":"Strong heritage awareness detected.") });
+  var tm={};
+  scores.forEach(function(s){ if(!tm[s.topicId]) tm[s.topicId]={total:0,count:0,title:s.topic}; tm[s.topicId].total+=s.pct; tm[s.topicId].count++; });
+  var ta=Object.keys(tm).map(function(id){ return {id:id,title:tm[id].title,avg:tm[id].total/tm[id].count}; });
+  if (ta.length>1) {
+    ta.sort(function(a,b){ return a.avg-b.avg; });
+    insights.push({ type:"Weakest Topic", color:"#e05060", text:'"'+ta[0].title+'" has lowest avg ('+Math.round(ta[0].avg)+'%). Needs more exhibit time.' });
+    insights.push({ type:"Strongest Topic", color:"#40916C", text:'"'+ta[ta.length-1].title+'" has highest avg ('+Math.round(ta[ta.length-1].avg)+'%). Students most familiar here.' });
+  }
+  if (scores.length>=6) {
+    var sorted=scores.slice().sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
+    var half=Math.floor(sorted.length/2);
+    var ea=sorted.slice(0,half).reduce(function(a,s){ return a+s.pct; },0)/half;
+    var la=sorted.slice(half).reduce(function(a,s){ return a+s.pct; },0)/(sorted.length-half);
+    var diff=la-ea;
+    insights.push({ type:"Trend Over Time", color:diff>3?"#40916C":diff<-3?"#e05060":"#C8973A",
+      text:"Early avg: "+Math.round(ea)+"%. Recent avg: "+Math.round(la)+"%. "+(diff>3?"Awareness INCREASING - positive impact!":diff<-3?"Awareness DECLINING - review engagement.":"Awareness STABLE.") });
+  }
+  el.innerHTML = insights.map(function(ins){
+    return '<div style="background:rgba(200,151,58,0.08);border-left:3px solid '+ins.color+';border-radius:8px;padding:12px 16px;margin-bottom:10px">'
+      +'<div style="font-size:10px;letter-spacing:2px;color:'+ins.color+';text-transform:uppercase;margin-bottom:4px">'+ins.type+'</div>'
+      +'<div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85)">'+ins.text+'</div></div>';
+  }).join("");
+}
+
+function renderBar(label, pct, count, unit) {
+  var c=pct>=75?"#40916C":pct>=50?"#C8973A":"#e05060";
+  return '<div style="margin-bottom:14px">'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">'
+    +'<span>'+label+' <span style="color:rgba(255,255,255,.3);font-size:11px">('+count+" "+unit+')</span></span>'
+    +'<span style="color:'+c+';font-weight:700">'+pct+'%</span></div>'
+    +'<div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden">'
+    +'<div style="width:'+pct+'%;height:100%;background:'+c+';border-radius:4px"></div></div></div>';
+}
+
+function renderTopicBreakdown(scores) {
+  var el=document.getElementById("topic-breakdown"); if(!el) return;
+  var m={};
+  scores.forEach(function(s){ if(!m[s.topicId]) m[s.topicId]={title:s.topic,total:0,count:0}; m[s.topicId].total+=s.pct; m[s.topicId].count++; });
+  var keys=Object.keys(m); if(!keys.length) { el.innerHTML='<p style="color:rgba(255,255,255,.3);font-size:13px">No data yet.</p>'; return; }
+  keys.sort(function(a,b){ return m[b].total/m[b].count-m[a].total/m[a].count; });
+  el.innerHTML = keys.map(function(id){ var d=m[id]; return renderBar(d.title,Math.round(d.total/d.count),d.count,"takers"); }).join("");
+}
+
+function renderGenerationBreakdown(scores) {
+  var el=document.getElementById("generation-breakdown"); if(!el) return;
+  var m={};
+  scores.forEach(function(s){ var g=s.grade&&s.grade!=="-"?s.grade:"Unknown"; if(!m[g]) m[g]={total:0,count:0}; m[g].total+=s.pct; m[g].count++; });
+  var keys=Object.keys(m); if(!keys.length) { el.innerHTML='<p style="color:rgba(255,255,255,.3);font-size:13px">No data yet.</p>'; return; }
+  keys.sort(function(a,b){ return m[b].total/m[b].count-m[a].total/m[a].count; });
+  el.innerHTML = keys.map(function(g){ var d=m[g]; return renderBar(g,Math.round(d.total/d.count),d.count,"students"); }).join("");
+}
+
+function renderTrendChart(scores) {
+  var el=document.getElementById("trend-chart"); if(!el) return;
+  if (scores.length<2) { el.innerHTML='<p style="color:rgba(255,255,255,.3);font-size:13px">Need more data to show trend.</p>'; return; }
+  var sorted=scores.slice().sort(function(a,b){ return (a.timestamp||a.id)-(b.timestamp||b.id); });
+  var mm={};
+  sorted.forEach(function(s){ var k=s.month||s.date||"?"; if(!mm[k]) mm[k]={total:0,count:0}; mm[k].total+=s.pct; mm[k].count++; });
+  var months=Object.keys(mm).sort();
+  var pts = (months.length>=2?months:sorted.map(function(s,i){ return String(i); })).map(function(k,i){
+    return { x:i, y:Math.round((mm[k]||{total:sorted[i]?sorted[i].pct:0,count:1}).total/((mm[k]||{count:1}).count)), label:k };
+  });
+  var W=520,H=130,P=28;
+  var maxY=Math.max.apply(null,pts.map(function(p){ return p.y; }));
+  var minY=Math.max(0,Math.min.apply(null,pts.map(function(p){ return p.y; }))-10);
+  var xS=pts.length>1?(W-P*2)/(pts.length-1):W-P*2;
+  function cx(i){ return P+i*xS; } function cy(v){ return H-P-((v-minY)/(Math.max(maxY-minY,1)))*(H-P*2); }
+  var path=pts.map(function(p,i){ return (i===0?"M":"L")+cx(i).toFixed(1)+","+cy(p.y).toFixed(1); }).join(" ");
+  var area=path+" L"+cx(pts.length-1).toFixed(1)+","+(H-P)+" L"+P+","+(H-P)+" Z";
+  var dots=pts.map(function(p,i){ return '<circle cx="'+cx(i).toFixed(1)+'" cy="'+cy(p.y).toFixed(1)+'" r="4" fill="#C8973A"/><text x="'+cx(i).toFixed(1)+'" y="'+(cy(p.y)-8).toFixed(1)+'" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.6)">'+p.y+'%</text>'; }).join("");
+  var labs=pts.map(function(p,i){ return '<text x="'+cx(i).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.3)">'+p.label+'</text>'; }).join("");
+  el.innerHTML = '<div style="font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px">Score Trend</div>'
+    +'<svg width="100%" viewBox="0 0 '+W+" "+H+'" style="overflow:visible">'
+    +'<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C8973A" stop-opacity=".3"/><stop offset="100%" stop-color="#C8973A" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#tg)"/><path d="'+path+'" fill="none" stroke="#C8973A" stroke-width="2"/>'
+    +dots+labs+"</svg>";
+}
+
+function renderWeakQuestions(scores) {
+  var el=document.getElementById("weak-questions"); if(!el) return;
+  var qm={};
+  scores.forEach(function(s){ (s.answers||[]).forEach(function(a){ if(!qm[a.q]) qm[a.q]={correct:0,total:0}; qm[a.q].total++; if(a.correct) qm[a.q].correct++; }); });
+  var keys=Object.keys(qm).filter(function(k){ return qm[k].total>=2; });
+  if (!keys.length) { el.innerHTML='<p style="color:rgba(255,255,255,.3);font-size:13px">Not enough data yet. Accumulates as more quizzes are taken.</p>'; return; }
+  keys.sort(function(a,b){ return (qm[a].correct/qm[a].total)-(qm[b].correct/qm[b].total); });
+  el.innerHTML = keys.slice(0,5).map(function(q,i){
+    var d=qm[q], p=Math.round(d.correct/d.total*100), c=p>=60?"#40916C":p>=40?"#C8973A":"#e05060";
+    return '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border-left:3px solid '+c+'">'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:6px;line-height:1.4">'+(i+1)+". "+q+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div style="flex:1;background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden"><div style="width:'+p+'%;height:100%;background:'+c+';border-radius:4px"></div></div>'
+      +'<span style="font-size:12px;font-weight:700;color:'+c+'">'+p+'%</span>'
+      +'<span style="font-size:11px;color:rgba(255,255,255,.3)">'+d.correct+"/"+d.total+'</span></div></div>';
+  }).join("");
+}
+
+function renderRecentTable(scores) {
+  var el=document.getElementById("admin-table"); if(!el) return;
+  var recent=scores.slice().reverse().slice(0,10), h="";
+  recent.forEach(function(s){ h+="<tr><td>"+s.name+"</td><td style='color:rgba(255,255,255,.55);font-size:13px'>"+s.topic+"</td><td><span class='score-pill'>"+s.score+"/"+s.total+"</span></td><td style='color:rgba(255,255,255,.45);font-size:13px'>"+s.grade+"</td><td style='color:rgba(255,255,255,.35);font-size:13px'>"+s.date+"</td></tr>"; });
+  el.innerHTML = h||'<tr><td colspan="5" style="color:rgba(255,255,255,0.3);padding:20px">No data yet.</td></tr>';
+}
+
+function clearData() {
+  if (confirm("Clear all visitor score data? This cannot be undone.")) { localStorage.removeItem("salinlahi_scores"); loadAdmin(); }
+}
+
+function showPinModal() {
+  document.getElementById("pin-modal").classList.add("visible");
+  document.getElementById("pin-input").value = "";
+  document.getElementById("pin-error").style.display = "none";
+  setTimeout(function(){ document.getElementById("pin-input").focus(); }, 150);
+}
+function hidePinModal() { document.getElementById("pin-modal").classList.remove("visible"); }
+function checkPin() {
+  if (document.getElementById("pin-input").value===ADMIN_PIN) { hidePinModal(); loadAdmin(); showScreen("admin"); }
+  else { document.getElementById("pin-error").style.display="block"; document.getElementById("pin-input").value=""; }
+}
+
+function shuffle(a) {
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+
+buildTopicGrid();
+
+</script>
+</body>
+</html>

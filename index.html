@@ -464,6 +464,16 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--navy);col
         </div>
         <div class="menu-wide-arrow">›</div>
       </div>
+      <button id="bt-connect-btn" onclick="connectSpike()" style="
+        width:100%;display:flex;align-items:center;gap:14px;
+        background:rgba(56,189,248,0.15);
+        border:1.5px solid rgba(56,189,248,0.4);
+        border-radius:16px;padding:14px 20px;
+        color:#38BDF8;font-family:'Nunito',sans-serif;
+        font-size:15px;font-weight:800;cursor:pointer;
+        margin-bottom:10px;transition:all .2s;">
+        🔵 Connect Rover
+      </button>
       <div class="menu-wide-card" id="btn-admin-open" style="background:rgba(100,116,139,.12);border:1.5px solid rgba(100,116,139,.25);">
         <div class="menu-wide-emoji">📊</div>
         <div class="menu-wide-text">
@@ -869,6 +879,188 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--navy);col
 <div class="toast" id="toast">📡 Signal sent to Rover</div>
 
 <script>
+
+// ═══════════════════════════════════════════════════
+// SALIN-LAHI ROVER — Bluetooth SPIKE Connection
+// No cables needed — pure wireless
+// Works on Chrome browser (desktop)
+// ═══════════════════════════════════════════════════
+
+// SPIKE Prime Bluetooth service UUIDs
+var SPIKE_SERVICE_UUID      = "00001623-1212-efde-1623-785feabcd123";
+var SPIKE_CHAR_UUID         = "00001624-1212-efde-1623-785feabcd123";
+
+var spikeDevice    = null;
+var spikeChar      = null;
+var btConnected    = false;
+var lastTriggerMs  = 0;
+var COOLDOWN_MS    = 15000;   // 15 seconds between triggers
+
+// Station map — which screen opens for each station
+var STATION_MAP = {
+  1: { screen: "explore", idx: 0 },   // Aeta History
+  2: { screen: "explore", idx: 1 },   // Traditional Livelihood
+  3: { screen: "explore", idx: 2 },   // Indigenous Music
+  4: { screen: "explore", idx: 3 },   // Traditional Tools
+  5: { screen: "explore", idx: 4 },   // Cultural Values
+  6: { screen: "overview", idx: null },// Olongapo Origins
+  7: { screen: "timeline", idx: null },// Naval Heritage
+  8: { screen: "explore", idx: 7 }    // People & Culture
+};
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() { t.style.display = "none"; }, 4000);
+}
+
+function handleStationTrigger(stationNum) {
+  var now = Date.now();
+  if (now - lastTriggerMs < COOLDOWN_MS) return; // cooldown
+  lastTriggerMs = now;
+
+  var target = STATION_MAP[stationNum];
+  if (!target) return;
+
+  showToast("🤖 Rover at Station " + stationNum + " — visitor detected!");
+
+  // Navigate to the right screen
+  show(target.screen);
+
+  // If explore screen, open the specific topic card
+  if (target.screen === "explore" && target.idx !== null) {
+    setTimeout(function() {
+      var cards = document.querySelectorAll(".exp-card");
+      if (cards && cards[target.idx]) {
+        cards[target.idx].click();
+        // Auto-play narration after card opens
+        setTimeout(function() {
+          var btn = document.getElementById("tts-play");
+          if (btn) btn.click();
+        }, 800);
+      }
+    }, 400);
+  }
+}
+
+// ── Parse incoming data from SPIKE ──────────────────
+function handleSpikeData(event) {
+  var data = event.target.value;
+  var text = "";
+  for (var i = 0; i < data.byteLength; i++) {
+    text += String.fromCharCode(data.getUint8(i));
+  }
+
+  text = text.trim();
+  console.log("SPIKE >>", text);
+
+  // SPIKE sends: SALIN_TRIGGER:3
+  if (text.startsWith("SALIN_TRIGGER:")) {
+    var parts = text.split(":");
+    var station = parseInt(parts[1]);
+    if (!isNaN(station)) handleStationTrigger(station);
+  }
+
+  // SPIKE ready signal
+  if (text === "SALIN_LAHI:READY") {
+    showToast("🤖 SALIN-LAHI Rover connected and ready!");
+    updateBtBtn(true);
+  }
+}
+
+// ── Connect to SPIKE via Bluetooth ──────────────────
+async function connectSpike() {
+  try {
+    showToast("🔵 Searching for SPIKE Prime...");
+
+    spikeDevice = await navigator.bluetooth.requestDevice({
+      filters: [
+        { namePrefix: "LEGO" },
+        { namePrefix: "SPIKE" }
+      ],
+      optionalServices: [SPIKE_SERVICE_UUID]
+    });
+
+    spikeDevice.addEventListener("gattserverdisconnected", onSpikeDisconnected);
+
+    var server  = await spikeDevice.gatt.connect();
+    var service = await server.getPrimaryService(SPIKE_SERVICE_UUID);
+    spikeChar   = await service.getCharacteristic(SPIKE_CHAR_UUID);
+
+    // Start receiving notifications from SPIKE
+    await spikeChar.startNotifications();
+    spikeChar.addEventListener("characteristicvaluechanged", handleSpikeData);
+
+    btConnected = true;
+    updateBtBtn(true);
+    showToast("✅ SPIKE Prime connected wirelessly!");
+    console.log("SPIKE connected:", spikeDevice.name);
+
+  } catch(e) {
+    console.log("Bluetooth error:", e);
+    if (e.name === "NotFoundError") {
+      showToast("❌ No SPIKE found. Make sure Bluetooth is on.");
+    } else if (e.name === "SecurityError") {
+      showToast("❌ Bluetooth blocked. Use Chrome on desktop.");
+    } else {
+      showToast("❌ Connection failed: " + e.message);
+    }
+    btConnected = false;
+    updateBtBtn(false);
+  }
+}
+
+function onSpikeDisconnected() {
+  btConnected = false;
+  updateBtBtn(false);
+  showToast("⚠️ SPIKE disconnected. Tap Connect to reconnect.");
+}
+
+function disconnectSpike() {
+  if (spikeDevice && spikeDevice.gatt.connected) {
+    spikeDevice.gatt.disconnect();
+  }
+  btConnected = false;
+  updateBtBtn(false);
+}
+
+function updateBtBtn(connected) {
+  var btn = document.getElementById("bt-connect-btn");
+  if (!btn) return;
+  if (connected) {
+    btn.textContent = "🔵 Rover Connected";
+    btn.style.background = "rgba(34,197,94,0.2)";
+    btn.style.borderColor = "#22C55E";
+    btn.style.color = "#22C55E";
+    btn.onclick = disconnectSpike;
+  } else {
+    btn.textContent = "🔵 Connect Rover";
+    btn.style.background = "rgba(56,189,248,0.15)";
+    btn.style.borderColor = "rgba(56,189,248,0.4)";
+    btn.style.color = "#38BDF8";
+    btn.onclick = connectSpike;
+  }
+}
+
+// Check if Web Bluetooth is supported
+function checkBluetooth() {
+  if (!navigator.bluetooth) {
+    var btn = document.getElementById("bt-connect-btn");
+    if (btn) {
+      btn.textContent = "Bluetooth not supported";
+      btn.style.opacity = "0.4";
+      btn.style.pointerEvents = "none";
+    }
+    console.log("Web Bluetooth not supported in this browser.");
+  }
+}
+
+window.addEventListener("load", checkBluetooth);
+
+
 
 
 
